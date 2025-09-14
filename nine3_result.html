@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<!-- saved from url=(0104)https://page.gensparksite.com/jupyter/tooluse__q-MiMIvTvarLT4eM9nASg/output/OliveWine-Complete-v1.5.html -->
+<html lang="ko"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>9가지 성격, 9가지 와인 성격검사 - v1.5</title>
+    <script src="./nine2_files/jspdf.umd.min.js">
+// === injected helpers: next-button behavior on last question ===
+(function(){
+    function getNextBtn(){
+        // 1) explicit id
+        var el = document.getElementById('nextButton');
+        if (el) return el;
+        // 2) button with text '다음 질문'
+        var btns = document.querySelectorAll('button');
+        for (var i=0;i<btns.length;i++){
+            var t = (btns[i].textContent||'').trim();
+            if (t.indexOf('다음 질문') !== -1) return btns[i];
+        }
+        // 3) a sibling of prevButton inside same container
+        var prev = document.getElementById('prevButton');
+        if (prev){
+            var cont = prev.closest('.button-container') || prev.parentElement;
+            if (cont){
+                var bts = cont.querySelectorAll('button');
+                if (bts.length >= 2) return bts[bts.length-1];
+            }
+        }
+        return null;
+    }
+    window.__getNextBtn = getNextBtn;
+
+    function isLast(){
+        try{
+            if (typeof shuffledQuestions !== 'undefined' && shuffledQuestions && shuffledQuestions.length){
+                return currentQuestionIndex === (shuffledQuestions.length - 1);
+            }
+        }catch(e){}
+        return currentQuestionIndex === 80; // fallback
+    }
+
+    function isAnswered(){
+        try{
+            if (Array.isArray(answers)) {
+                var v = answers[currentQuestionIndex];
+                return v !== undefined && v !== null && v !== 0;
+            }
+        }catch(e){}
+        var chosen = document.querySelector('input[name="answer"]:checked');
+        return !!chosen;
+    }
+
+    function updateNextButtonUI(){
+        var nb = getNextBtn();
+        if (!nb) return;
+        if (isLast() && isAnswered()){
+            nb.textContent = '설문 결과 보기';
+            nb.classList.add('button-danger','blink');
+            nb.onclick = function(){ finishSurvey(); };
+        } else {
+            nb.textContent = '다음 질문';
+            nb.classList.remove('button-danger','blink');
+            nb.onclick = function(){
+                if (!isAnswered()){
+                    alert('답변을 선택해 주세요.');
+                    return;
+                }
+                nextQuestion();
+            };
+        }
+    }
+    window.updateNextButtonUI = updateNextButtonUI;
+
+    // Wrap displayQuestion to refresh button state
+    if (typeof displayQuestion === 'function'){
+        var _display = displayQuestion;
+        displayQuestion = function(){
+            _display.apply(this, arguments);
+            setTimeout(updateNextButtonUI, 0);
+        };
+    }
+
+    // Wrap selectAnswer to avoid auto-advance on last & refresh state
+    if (typeof selectAnswer === 'function'){
+        var _select = selectAnswer;
+        selectAnswer = function(value){
+            _select.apply(this, arguments);
+            if (isLast()){
+                // block any auto-advance by overriding nextQuestion temporarily
+                // until the user clicks the CTA
+                if (typeof nextQuestion === 'function'){
+                    if (!nextQuestion.__wrapped){
+                        var _next = nextQuestion;
+                        var blocker = function(){
+                            if (isLast()) return; // do nothing on last
+                            _next.apply(this, arguments);
+                            setTimeout(updateNextButtonUI, 0);
+                        };
+                        blocker.__wrapped = true;
+                        nextQuestion = blocker;
+                    }
+                }
+            }
+            setTimeout(updateNextButtonUI, 0);
+        };
+    }
+
+    // Also refresh on DOM ready
+    document.addEventListener('DOMContentLoaded', function(){
+        setTimeout(updateNextButtonUI, 200);
+    });
+})();
+
+</script>
+    <script src="./nine2_files/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #556B2F, #6B8E23);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #556B2F;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #556B2F;
+            padding: 20px;
+            margin: 20px 0;
+            line-height: 1.8;
+        }
+
+        .question-container {
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        .question-number {
+            font-size: 18px;
+            color: #556B2F;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .question-text {
+            font-size: 22px;
+            color: #333;
+            margin-bottom: 40px;
+            line-height: 1.6;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+
+        .scale-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px 0;
+        }
+
+        .scale-option {
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .scale-option:hover {
+            transform: scale(1.05);
+        }
+
+        .scale-option input[type="radio"] {
+            width: 25px;
+            height: 25px;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        .scale-label {
+            font-size: 14px;
+            color: #555;
+            font-weight: 500;
+            line-height: 1.3;
+        }
+
+        .scale-option.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .progress-container {
+            margin: 30px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #556B2F, #6B8E23);
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            text-align: center;
+            margin-top: 10px;
+            font-weight: bold;
+            color: #556B2F;
+        }
+
+        .button {
+            background: linear-gradient(135deg, #556B2F, #6B8E23);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 10px;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(85, 107, 47, 0.3);
+        }
+
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .button-secondary {
+            background: #6c757d;
+        }
+
+        .button-container {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .result-container {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .result-type {
+            font-size: 32px;
+            color: #556B2F;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        .result-image {
+            width: 120px;
+            height: 120px;
+            margin: 20px auto;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .result-description {
+            font-size: 18px;
+            line-height: 1.8;
+            color: #333;
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .warning {
+            color: #dc3545;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .admin-container {
+            padding: 20px;
+        }
+
+        .response-item {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .response-item:hover {
+            background: #e9ecef;
+        }
+
+        .chart-container {
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .bar {
+            height: 30px;
+            margin: 5px 0;
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bar-label {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-weight: bold;
+            color: white;
+            z-index: 1;
+        }
+
+        .bar-value {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-weight: bold;
+            color: white;
+            z-index: 1;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .pdf-chart {
+            font-family: Arial, sans-serif;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+    
+/* === injected minimal styles === */
+.button-danger { background:#dc3545 !important; border-color:#dc3545 !important; }
+@keyframes _blink { 0%,100% {opacity:1} 50% {opacity:.55} }
+.blink { animation:_blink .9s linear infinite; }
+
+</style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">🍷 9가지 성격, 9가지 와인 저서와 함께하는 나의 유형은?</div>
+            <div class="subtitle">성격 유형 검사</div>
+        </div>
+
+        <!-- 메인 페이지 -->
+        <div id="mainPage" class="page active">
+            <div class="content">
+                <div class="button-container">
+                    <button class="button" onclick="showUserInfo()">검사 시작하기</button>
+                    <button class="button button-secondary" onclick="showAdminLogin()">관리자 모드</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 사용자 정보 입력 페이지 -->
+        <div id="userInfoPage" class="page">
+            <div class="content">
+                <h2>기본 정보 입력</h2>
+
+                <div class="info-box">
+                    본 설문지는 9가지 성격, 9가지 와인을 위한 성격검사지 입니다.<br>
+                    * 자신이 사회화가 많이 되지 않았던 시절을 기준으로 하여 솔직한 답변을 주시면 검사지의 신뢰성이 높아지니 이 점을 참고하셔서 진행해 주시면 감사하겠습니다.<br>
+                    * 본 설문은 총 81문항으로 구성되었고, 5점 척도 중 가급적 보통(3점)점수는 피해서 선택해 주시면 좋습니다. (좀 더 정확한 측정과 동점 방지를 위해 중간 수인 3. 보통이다는 체크 횟수를 10회 미만으로 제한이 되어 있습니다.)
+                </div>
+
+                <form id="userForm">
+                    <div class="form-group">
+                        <label for="name">이름 *</label>
+                        <input type="text" id="name" required="">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">이메일 *</label>
+                        <input type="email" id="email" required="">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">전화번호 *</label>
+                        <input type="tel" id="phone" required="">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="gender">성별 *</label>
+                        <select id="gender" required="">
+                            <option value="">선택해주세요</option>
+                            <option value="male">남성</option>
+                            <option value="female">여성</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="age">나이 *</label>
+                        <input type="number" id="age" min="1" max="120" required="">
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="consent" required="">
+                        <label for="consent">개인정보 제공에 동의합니다 *</label>
+                    </div>
+                </form>
+
+                <div class="button-container">
+                    <button class="button button-secondary" onclick="showMain()">이전</button>
+                    <button class="button" onclick="startSurvey()">검사 시작</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 설문 페이지 -->
+        <div id="surveyPage" class="page">
+            <div class="content">
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">1 / 81</div>
+                </div>
+
+                <div class="question-container">
+                    <div class="question-number" id="questionNumber">질문 1</div>
+                    <div class="question-text" id="questionText"></div>
+
+                    <div class="scale-container">
+                        <div class="scale-option" onclick="selectAnswer(1)">
+                            <input type="radio" name="answer" value="1" id="answer1">
+                            <div class="scale-label">전혀<br>그렇지 않다</div>
+                        </div>
+                        <div class="scale-option" onclick="selectAnswer(2)">
+                            <input type="radio" name="answer" value="2" id="answer2">
+                            <div class="scale-label">그렇지<br>않다</div>
+                        </div>
+                        <div class="scale-option" onclick="selectAnswer(3)" id="neutralOption">
+                            <input type="radio" name="answer" value="3" id="answer3">
+                            <div class="scale-label">보통이다</div>
+                        </div>
+                        <div class="scale-option" onclick="selectAnswer(4)">
+                            <input type="radio" name="answer" value="4" id="answer4">
+                            <div class="scale-label">그렇다</div>
+                        </div>
+                        <div class="scale-option" onclick="selectAnswer(5)">
+                            <input type="radio" name="answer" value="5" id="answer5">
+                            <div class="scale-label">매우<br>그렇다</div>
+                        </div>
+                    </div>
+
+                    <div class="warning" id="neutralWarning" style="display: none;">
+                        '보통이다' 선택 가능 횟수: <span id="neutralCount">10</span>회 남음
+                    </div>
+                </div>
+
+                <div class="button-container">
+                    <button class="button button-secondary" id="prevButton" onclick="previousQuestion()" style="display: none;">이전 질문</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 결과 페이지 (유형별 이미지 추가) -->
+        <div id="resultPage" class="page">
+            <div class="content">
+                <div class="result-container">
+                    <h2>검사 완료!</h2>
+                    <div class="result-type" id="resultType"></div>
+                    <img id="resultImage" class="result-image" src="https://page.gensparksite.com/jupyter/tooluse__q-MiMIvTvarLT4eM9nASg/output/OliveWine-Complete-v1.5.html" alt="유형 이미지" style="display: none;">
+                    <div class="result-description" id="resultDescription"></div>
+
+                    <div class="button-container">
+                        <button class="button" onclick="showMain()">처음으로</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 관리자 로그인 페이지 -->
+        <div id="adminLoginPage" class="page">
+            <div class="content">
+                <h2>관리자 로그인</h2>
+
+                <form id="adminForm">
+                    <div class="form-group">
+                        <label for="adminId">아이디</label>
+                        <input type="text" id="adminId">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="adminPw">비밀번호</label>
+                        <input type="password" id="adminPw">
+                    </div>
+                </form>
+
+                <div class="button-container">
+                    <button class="button button-secondary" onclick="showMain()">이전</button>
+                    <button class="button" onclick="adminLogin()">로그인</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 관리자 페이지 -->
+        <div id="adminPage" class="page">
+            <div class="content">
+                <div class="admin-container">
+                    <h2>관리자 페이지</h2>
+
+                    <div class="button-container">
+                        <button class="button" onclick="downloadAllResponses()">전체응답 다운로드</button>
+                        <button class="button button-secondary" onclick="showMain()">메인으로</button>
+                    </div>
+
+                    <h3>개별 응답 결과</h3>
+                    <div id="responsesList"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 상세 응답 보기 페이지 (PDF 다운로드 버튼 추가) -->
+        <div id="detailPage" class="page">
+            <div class="content">
+                <div id="detailContent"></div>
+
+                <div class="button-container">
+                    <button class="button button-secondary" onclick="showAdmin()">관리자 페이지로</button>
+                    <button class="button" onclick="downloadIndividualResponse()">개별 다운로드</button>
+                    <button class="button" onclick="downloadChartAsPDF()">점수분포 PDF 다운로드</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+
+        // OliveWine 성격 테스트 v1.5 - 0점 오류 수정 버전
+
+        // 전역 변수
+        let questions = [{"type": 1, "order": 1, "question": "나는 도덕적 기준이나 원칙을 중요하게 생각한다."}, {"type": 1, "order": 2, "question": "일을 하다가 실수를 하면 자책감이 오래 남는다."}, {"type": 1, "order": 3, "question": "내 머릿속에는 심판관이 있어서 나는 그와 함께 살고 있는 것 같다."}, {"type": 1, "order": 4, "question": "사람들에게 비난을 받기보다 내 양심에 어긋나는 게 더 싫다."}, {"type": 1, "order": 5, "question": "화를 내지 안으려고 노력하지만 한 번 화가 나면 오래가는 편이다. "}, {"type": 1, "order": 6, "question": "나는 자세한 부분까지 오류를 감지하려고 하고, 그것이 내 실수가 아닐 때라도 수정하고 싶은 유혹을 느낀다"}, {"type": 1, "order": 7, "question": "주변에 있는 불완전함을 발견하고 그것을 어떻게 개선할 수 있는지 생각하는 경향이 있다."}, {"type": 1, "order": 8, "question": "내면 깊숙이 “이건 옳지 않아”라는 판단이 자주 일어난다."}, {"type": 1, "order": 9, "question": "나는 내 역할과 책임을 다하는 것이 중요하다고 믿는다."}, {"type": 2, "order": 10, "question": "나는 누군가를 도와줄 수 있을 때 기쁨을 느낀다."}, {"type": 2, "order": 11, "question": "나는 다른 사람의 감정을 잘 파악하고, 그들의 기분을 맞춰주려고 노력한다."}, {"type": 2, "order": 12, "question": "나는 종종 자신의 필요를 돌보기보다 다른 사람의 필요를 먼저 챙긴다."}, {"type": 2, "order": 13, "question": "내가 도움을 줄 수 없을 때 죄책감을 느끼기도 한다."}, {"type": 2, "order": 14, "question": "누군가 나를 필요로 하지 않으면 불안해진다."}, {"type": 2, "order": 15, "question": "사람들 사이에서 따뜻하고 사랑받는 존재로 보이고 싶다."}, {"type": 2, "order": 16, "question": "나는 거절당하는 것에 대한 두려움 때문에 '아니오'라고 말하기 어려워한다."}, {"type": 2, "order": 17, "question": "자신을 사람들을 돌보는 사람 또는 일종의 주최자와 같은 존재로 여긴다."}, {"type": 2, "order": 18, "question": "나는 사랑을 받기 위해 나 자신을 희생할 때가 있다."}, {"type": 3, "order": 19, "question": "나는 항상 목표를 설정하고 성취하려고 노력한다."}, {"type": 3, "order": 20, "question": "다른 사람의 인정이나 칭찬이 나에게 큰 의미가 있다."}, {"type": 3, "order": 21, "question": "남들로부터 설득력이 있다는 말을 듣는다."}, {"type": 3, "order": 22, "question": "사람들을 만날 때에는 많은 성과를 올리고 있는 사람이라는 이미지를 심어주는 것이 중요하다."}, {"type": 3, "order": 23, "question": "감정보다 결과와 성과에 집중하는 편이다."}, {"type": 3, "order": 24, "question": "첫인상은 아주 중요하고 나는 상황에 맞게 내 이미지를 조절할 줄 안다."}, {"type": 3, "order": 25, "question": "항상 목표를 명확히 설정하고 성과를 거두기 위해 당장 해야 할 일이 무엇인지 잘 알고 있다."}, {"type": 3, "order": 26, "question": "시간을 낭비하는 것이 견디기 힘들다."}, {"type": 3, "order": 27, "question": "성과를 내지 못했을 때 스스로를 몰아붙인다."}, {"type": 4, "order": 28, "question": "나는 나만의 감정과 정체성을 매우 중요하게 여긴다."}, {"type": 4, "order": 29, "question": "상징적인 것(시, 비유, 예술 등)에 마음이 끌린다."}, {"type": 4, "order": 30, "question": "평범하거나 모방적인 삶에 깊은 저항감을 느낀다."}, {"type": 4, "order": 31, "question": "감정의 깊이와 복잡함이 내 삶을 의미 있게 만든다."}, {"type": 4, "order": 32, "question": "다른 사람들은 나만큼 사물을 깊이 있게 이해하지 못한다."}, {"type": 4, "order": 33, "question": "일반적이고 진부한 표현으로는 자신의 감정을 충분히 나타낼 수 없다."}, {"type": 4, "order": 34, "question": "다른 사람들은 내가 어떻게 느끼고 있는지는 좀처럼 이해할 수 없을 것이다."}, {"type": 4, "order": 35, "question": "비교를 통해 자신이 부족하다고 느끼기도 한다."}, {"type": 4, "order": 36, "question": "감정을 억누르기보다는 표현하고 나누고 싶다."}, {"type": 5, "order": 37, "question": "나는 혼자 있는 시간을 매우 소중하게 생각한다."}, {"type": 5, "order": 38, "question": "전체 상황을 다 파악 한 후에 행동하고 싶다"}, {"type": 5, "order": 39, "question": "지나친 감정적 요구나 친밀함은 부담스럽게 느껴진다."}, {"type": 5, "order": 40, "question": "감정보다는 분석과 이해를 우선시한다."}, {"type": 5, "order": 41, "question": "내 사적인 영역이 침범당할 때 큰 스트레스를 느낀다."}, {"type": 5, "order": 42, "question": "중요한 주제에 대해서는 정보를 충분히 얻으려고 하며 정보 없이 가볍게 이야기하지는 않는다"}, {"type": 5, "order": 43, "question": "관계에서 너무 많은 에너지를 쏟으면 피로감을 느낀다."}, {"type": 5, "order": 44, "question": "어떤 일에 직접 뛰어들기 전에 남들이 하는 것을 관찰하는 경향이 있다."}, {"type": 5, "order": 45, "question": "충분히 생각할 시간도 없이 갑자기 어떻게 생각하느냐는 질문을 받으면 대답할 수가 없다."}, {"type": 6, "order": 46, "question": "나는 걱정이 많고, 항상 대비책을 생각해둔다."}, {"type": 6, "order": 47, "question": "누군가를 신뢰하게 되면 오랫동안 충성을 다하는 편이다."}, {"type": 6, "order": 48, "question": "권위나 체계가 있으면 심리적으로 안정된다."}, {"type": 6, "order": 49, "question": "어떤 문제가 일어나면 최악의 상태를 단정하는 경향이 있다."}, {"type": 6, "order": 50, "question": "나는 잘 훈련되어 있어 조직이나 집단에 헌신할 수 있다."}, {"type": 6, "order": 51, "question": "결정을 내릴 때 확신이 서지 않으면 오래 고민한다."}, {"type": 6, "order": 52, "question": "나의 성공에 대해서도 가끔 평가절하하는 경향이 있다."}, {"type": 6, "order": 53, "question": "외부 위협으로부터 나를 지키는 데 많은 에너지를 쓴다."}, {"type": 6, "order": 54, "question": "나는 명확한 지침이 있을 때 일의 능률이 오른다."}, {"type": 7, "order": 55, "question": "나는 새로운 경험과 자극을 끊임없이 추구한다."}, {"type": 7, "order": 56, "question": "나는 여행, 다양한 음식, 흥미로운 활동으로 하루를 채워야 내 삶이 활기차다고 느낀다."}, {"type": 7, "order": 57, "question": "나는 우울하거나 부정적인 감정을 오래 붙잡기보다는, 즐거운 경험으로 기분을 전환하려 한다."}, {"type": 7, "order": 58, "question": "나는 아이디어를 떠올리고 새로운 가능성을 탐색하는 것이, 반복적인 실행보다 더 활력을 준다."}, {"type": 7, "order": 59, "question": "나는 불편하거나 지루한 상황을 피하고, 즉시 더 흥미로운 활동이나 사람을 찾아 나선다."}, {"type": 7, "order": 60, "question": "나는 내 에너지와 즐거움을 최대한 살릴 수 있는 여러 시나리오를 생각하고, 그때그때 가장 신나는 선택을 한다."}, {"type": 7, "order": 61, "question": "나는 어려운 상황에 오래 머무르기보다는, 빠르게 전환하여 긍정적이고 유연한 방향으로 나아가려 한다."}, {"type": 7, "order": 62, "question": "나는 고생이나 교훈보다, 다양한 경험과 즐거움으로 인생을 풍성하게 만들고 싶다."}, {"type": 7, "order": 63, "question": "나는 기회가 제한되거나 내 선택지가 막히는 순간, 재빨리 돌파구를 찾지 못하면 답답함을 느낀다."}, {"type": 8, "order": 64, "question": "나는 나의 삶을 스스로 통제하기 때문에, 다른 사람에게 통제받는 것을 매우 싫어한다."}, {"type": 8, "order": 65, "question": "나는 솔직하고 직설적으로 내 의견을 표현하는 것을 선호한다"}, {"type": 8, "order": 66, "question": "나는 나에게 해를 끼친 사람에게 복수하고 싶은 충동을 느낀다."}, {"type": 8, "order": 67, "question": "나는 강한 에너지와 자신감을 가지고 있으며, 리더의 역할을 맡을 때가 많다."}, {"type": 8, "order": 68, "question": "주변 사람들을 지켜줘야 한다는 책임감을 느낀다."}, {"type": 8, "order": 69, "question": "불공평한 상황에서는 즉시 개입하고 싶은 충동이 있다."}, {"type": 8, "order": 70, "question": "자신이 연약한 사람처럼 보이는 걸 경계한다."}, {"type": 8, "order": 71, "question": "나는 갈등을 피하기보다 정면으로 부딪혀 문제를 해결하려 한다."}, {"type": 8, "order": 72, "question": "나는 자기주장이 강한 편이라는 말을 자주 듣는다."}, {"type": 9, "order": 73, "question": "나는 조화로움을 추구하는 평화주의자이다."}, {"type": 9, "order": 74, "question": "나는 종종 나의 진정한 욕구나 의견이 무엇인지 잘 모르겠다고 느낀다"}, {"type": 9, "order": 75, "question": "무엇인가를 시작하려면 외부의 자극이 필요하다."}, {"type": 9, "order": 76, "question": "긴장된 분위기보다는 편안하고 느긋한 분위기를 선호한다."}, {"type": 9, "order": 77, "question": "나는 다른 사람들과 갈등을 겪느니 차라리 나의 욕구를 잊어버리는 편을 택한다."}, {"type": 9, "order": 78, "question": "나는 중요한 결정을 내리는 것을 어려워하며, 결정을 미루는 경향이 있다"}, {"type": 9, "order": 79, "question": "나는 편안하고 안정적인 일상을 선호하며, 급작스러운 변화를 좋아하지 않는다."}, {"type": 9, "order": 80, "question": "내 존재가 다른 사람에게 영향을 미치지 않기를 바란다."}, {"type": 9, "order": 81, "question": "나는 갈등보다는 침묵이나 회피로 상황을 넘기려 한다."}];
+        let currentQuestionIndex = 0;
+        let answers = {};
+        let neutralCount = 10;
+        let shuffledQuestions = [];
+        let userInfo = {};
+        let responses = JSON.parse(localStorage.getItem('responses') || '[]');
+        let currentDetailIndex = 0;
+
+        // 유형별 결과 텍스트
+        const typeResults = {
+            1: `당신은 꼼꼼하고 똑부러진 완벽씨예요.\n정말 멋지네요! 🌸\n에니어그램 1번, 개혁가(The Reformer)인 당신은\n옳고 바른 삶을 살고 싶은 마음이 누구보다 강합니다.\n원칙과 책임감을 소중히 여기며 늘 더 나은 완벽을 꿈꾸지요.\n다만 때때로 스스로에게 너무 엄격해질 수 있으니,\n오늘은 자신에게도 따뜻한 미소 한 번 선물해보세요 💕`,
+            2: `당신은 기쁨의 거품 속에 춤추는 따뜻한 새예요.\n정말 멋지군요! 💕\n2번 조력자 (The Helper)유형인 당신은 사랑받고 필요로 되는 존재가 되고 싶은 마음이 가득합니다.\n누구보다 따뜻하고 배려심 깊으며 헌신적이지요.\n다만, 때로는 자기 마음을 돌보는 것도 잊지 말아주세요. 🌷`,
+            3: `당신은 반짝반짝 빛나는 우리의 영웅이에요.\n정말 멋져요! ✨\n3번 성취자 (The Achiever)유형인 당신은 성공과 인정을 향해 힘차게 나아가며, 효율적이고 열정적이며 목표 달성 능력이 탁월합니다.\n하지만 때때로 ‘진짜 나’를 잊지 않고\n내 마음을 꼭 안아주는 시간도 필요하답니다. 🌟`,
+            4: `당신은 감성을 품은 작은 고슴도치예요.\n너무 사랑스러워요! 🎨\n4번 예술가 (The Individualist)유형인 당신은 독특하고 특별한 존재가 되고 싶어 하고, 깊은 감성과 뛰어난 미적 감각을 지녔습니다.\n하지만 자기 몰입과 우울감 속에 갇히지 않도록,\n오늘은 세상에 당신의 빛나는 색을 뿌려주세요. 🌈`,
+            5: `당신은 살짝 까칠하지만 속은 따뜻한 츤데레랍니다.\n정말 멋져요! 🦉\n5번 탐구자 (The Investigator)유형인 당신은 세상을 이해하고 지식을 소유하려는 열정이 크고, 분석적이며 통찰력이 뛰어납니다.\n하지만 스스로를 고립시키기보다는\n마음을 조금 열어 따뜻한 교감도 누려보세요. 🌙`,
+            6: `당신은 눈 속에서도 꿋꿋이 피어나는 에델바이스 같아요.\n정말 멋져요! ❄️🌸\n6번 충실가 (The Loyalist)유형인 당신은 안전과 확신을 추구하며,\n충성심과 위기 대처 능력이 빛납니다.\n때로는 불안과 의심이 찾아올 수 있지만,\n그 안에서도 당신의 믿음과 용기는 늘 든든한 힘이 됩니다. 💫`,
+            7: `당신은 \'내가 제일 잘 나가\' 반짝이는 별이에요.\n정말 멋지군요! 🌟\n7번 낙천가, 열정가 (The Enthusiast)유형인 당신은 즐거움과 자유를 사랑하며, 활기차고 다재다능하며 창조적인 에너지를 가득 지녔습니다.\n다만 현실을 피하고 싶을 때는 잠시 멈춰 \n숨 고르기를 해보는 것도 좋아요. 🌈`,
+            8: `당신은 \'주먹 쥐고 일어서는 용감한 리더\'예요.\n정말 멋져요! 🔥\n8번 도전자 (The Challenger)유형인 당신은 자신과 타인을 지키고 힘을 발휘하며, 결단력과 지도력, 정의감이 가득합니다.\n그러나 때로는 강한 마음을 조금 내려놓고,\n따뜻한 다정함을 드러내도 괜찮습니다. 🌻`,
+            9: `당신은 꿀단지 같은 달콤한 이웃이에요.\n참 멋집니다! 🍯🌼\n9번 평화주의자 (The Peacemaker)유형인 당신은 평화와 조화를 사랑하며, 포용력과 중재 능력으로 세상을 차분하게 감쌉니다.\n하지만 무기력에 빠지지 않도록 \n오늘은 당신의 목소리도 소중히 들려주세요. 🌙`,
+        };
+
+        // 유형별 이미지 URL
+        const typeImages = {"1": "https://page.gensparksite.com/v1/base64_upload/9156738ee759662ef90c4579f6d3d31a", "2": "https://page.gensparksite.com/v1/base64_upload/85b44e5f373aea7937e191e0939d0b74", "3": "https://page.gensparksite.com/v1/base64_upload/e9eca28862135b0a6c943b71b7db5672", "4": "https://page.gensparksite.com/v1/base64_upload/43b6acc6baf28b4ea711215e83d62f30", "5": "https://page.gensparksite.com/v1/base64_upload/71aae062ef967489c72c598e513e2cdf", "6": "https://page.gensparksite.com/v1/base64_upload/b524b31fbd90e20cc94c9f208e0a0f5b", "7": "https://page.gensparksite.com/v1/base64_upload/e4a276a07617791ead7344246967634b", "8": "https://page.gensparksite.com/v1/base64_upload/2398820fa31e36aaf43f26775ea2be75", "9": "https://page.gensparksite.com/v1/base64_upload/f8c248e91f3b42d019c9a113ea762364"};
+
+        // 페이지 전환 함수들
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        function showMain() {
+            showPage('mainPage');
+        }
+
+        function showUserInfo() {
+            showPage('userInfoPage');
+        }
+
+        function showAdminLogin() {
+            showPage('adminLoginPage');
+        }
+
+        function showAdmin() {
+            showPage('adminPage');
+            loadResponsesList();
+        }
+
+        // 설문 시작
+        function startSurvey() {
+            const form = document.getElementById('userForm');
+            const consent = document.getElementById('consent').checked;
+
+            if (!form.checkValidity() || !consent) {
+                alert('모든 필수 항목을 입력하고 동의해주세요.');
+                return;
+            }
+
+            // 사용자 정보 저장
+            userInfo = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                gender: document.getElementById('gender').value,
+                age: document.getElementById('age').value,
+                startTime: new Date().toISOString()
+            };
+
+            // 질문 순서 랜덤화
+            shuffledQuestions = [...questions];
+            for (let i = shuffledQuestions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffledQuestions[i], shuffledQuestions[j]] = [shuffledQuestions[j], shuffledQuestions[i]];
+            }
+
+            currentQuestionIndex = 0;
+            answers = {};
+            neutralCount = 10;
+
+            showPage('surveyPage');
+            displayQuestion();
+        }
+
+        // 질문 표시
+        function displayQuestion() {
+            const question = shuffledQuestions[currentQuestionIndex];
+
+            document.getElementById('questionNumber').textContent = `질문 ${currentQuestionIndex + 1}`;
+            document.getElementById('questionText').textContent = question.question;
+            document.getElementById('progressText').textContent = `${currentQuestionIndex + 1} / 81`;
+            document.getElementById('progressFill').style.width = `${((currentQuestionIndex + 1) / 81) * 100}%`;
+
+            // 이전 답변이 있으면 표시
+            const prevAnswer = answers[currentQuestionIndex];
+            if (prevAnswer) {
+                document.getElementById(`answer${prevAnswer}`).checked = true;
+            } else {
+                document.querySelectorAll('input[name="answer"]').forEach(input => {
+                    input.checked = false;
+                });
+            }
+
+            // 이전 버튼 표시/숨김
+            document.getElementById('prevButton').style.display = currentQuestionIndex > 0 ? 'inline-block' : 'none';
+
+            // 중립 선택 제한
+            const neutralOption = document.getElementById('neutralOption');
+            if (neutralCount <= 0 && (!prevAnswer || prevAnswer !== 3)) {
+                neutralOption.classList.add('disabled');
+                document.getElementById('answer3').disabled = true;
+            } else {
+                neutralOption.classList.remove('disabled');
+                document.getElementById('answer3').disabled = false;
+            }
+
+            document.getElementById('neutralCount').textContent = neutralCount;
+            document.getElementById('neutralWarning').style.display = neutralCount <= 3 ? 'block' : 'none';
+        }
+
+        // 답변 선택 (자동 넘어가기)
+        function selectAnswer(value) {
+            const prevAnswer = answers[currentQuestionIndex];
+
+            // 중립 선택 제한 체크
+            if (value === 3 && neutralCount <= 0 && prevAnswer !== 3) {
+                return;
+            }
+
+            // 중립 선택 카운트 업데이트
+            if (prevAnswer === 3 && value !== 3) {
+                neutralCount++;
+            } else if (prevAnswer !== 3 && value === 3) {
+                neutralCount--;
+            }
+
+            answers[currentQuestionIndex] = value;
+            document.getElementById(`answer${value}`).checked = true;
+
+            // 잠시 대기 후 자동으로 다음 질문으로 이동
+            setTimeout(() => {
+                nextQuestion();
+            }, 500);
+        }
+
+        // 다음 질문
+        function nextQuestion() {
+            if (currentQuestionIndex < 80) {
+                currentQuestionIndex++;
+                displayQuestion();
+            } else {
+                finishSurvey();
+            }
+        }
+
+        // 이전 질문
+        function previousQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                displayQuestion();
+            }
+        }
+
+        // 설문 완료 (유형별 이미지 표시 추가)
+        
+        // 답변 검증 함수 - v1.2 0점 오류 방지
+        function validateAnswers() {
+            console.log('=== 답변 검증 시작 ===');
+            let hasError = false;
+            for (let i = 0; i < 81; i++) {
+                const score = answers[i];
+                if (score === 0 || score === undefined || score === null) {
+                    console.warn(`Q${i+1}: 잘못된 점수 (${score}) → 1점으로 수정`);
+                    answers[i] = 1;
+                    hasError = true;
+                } else if (score < 1 || score > 5) {
+                    console.warn(`Q${i+1}: 범위 벗어남 (${score}) → 1점으로 수정`);
+                    answers[i] = 1;
+                    hasError = true;
+                }
+            }
+
+            if (hasError) {
+                console.log('🔧 답변 검증 완료: 오류 수정됨');
+            } else {
+                console.log('✅ 답변 검증 완료: 모든 답변 정상');
+            }
+        }
+
+        function finishSurvey() {
+            
+            // 답변 검증 실행
+            validateAnswers();
+
+            // 점수 계산
+            const typeScores = {};
+            for (let i = 1; i <= 9; i++) {
+                typeScores[i] = 0;
+            }
+
+            for (let i = 0; i < 81; i++) {
+                const question = shuffledQuestions[i];
+                const score = Math.max(answers[i] || 1, 1); // 최소값 1점 보장
+                typeScores[question.type] += score;
+            }
+
+            // 최고 점수 유형 찾기
+            let maxScore = 0;
+            let resultType = 1;
+            for (let type in typeScores) {
+                if (typeScores[type] > maxScore) {
+                    maxScore = typeScores[type];
+                    resultType = parseInt(type);
+                }
+            }
+
+            // 결과 저장
+            const result = {
+                ...userInfo,
+                completedTime: new Date().toISOString(),
+                answers: {...answers},
+                shuffledQuestions: [...shuffledQuestions],
+                typeScores: typeScores,
+                resultType: resultType,
+                maxScore: maxScore
+            };
+
+            // 중복 저장 방지: 같은 사용자의 응답이 이미 있는지 확인
+            const existingIndex = responses.findIndex(r => 
+                r.name === userInfo.name && 
+                r.email === userInfo.email && 
+                Math.abs(new Date(r.timestamp) - new Date()) < 60000 // 1분 내 중복 방지
+            );
+
+            if (existingIndex === -1) {
+                // 중복이 아닌 경우에만 저장
+                responses.push(result);
+                localStorage.setItem('responses', JSON.stringify(responses));
+                console.log('새로운 응답 저장됨');
+            } else {
+                // 중복인 경우 기존 응답 업데이트
+                responses[existingIndex] = result;
+                localStorage.setItem('responses', JSON.stringify(responses));
+                console.log('기존 응답 업데이트됨');
+            }
+
+            // 결과 표시 (이미지 포함)
+            document.getElementById('resultType').textContent = `유형 ${resultType}`;
+
+            // 유형별 이미지 표시
+            const resultImage = document.getElementById('resultImage');
+            if (typeImages[resultType]) {
+                resultImage.src = typeImages[resultType];
+                resultImage.style.display = 'block';
+            }
+
+            document.getElementById('resultDescription').innerHTML = typeResults[resultType];
+
+            showPage('resultPage');
+        }
+
+        // 관리자 로그인
+        function adminLogin() {
+            const id = document.getElementById('adminId').value;
+            const pw = document.getElementById('adminPw').value;
+
+            if (id === 'signet' && pw === '0688') {
+                showAdmin();
+            } else {
+                alert('아이디 또는 비밀번호가 틀렸습니다.');
+            }
+        }
+
+        // 응답 목록 로드
+        
+        // 응답 데이터 저장
+        function saveResponses() {
+            localStorage.setItem('responses', JSON.stringify(responses));
+        }
+
+        // 개별 응답 삭제 함수
+        function deleteResponse(index) {
+            if (confirm('정말로 이 응답을 삭제하시겠습니까?')) {
+                responses[index].deleted = true;
+                saveResponses();
+                loadResponsesList();
+            }
+        }
+
+function loadResponsesList() {
+            const list = document.getElementById('responsesList');
+            list.innerHTML = '';
+
+            if (responses.length === 0) {
+                list.innerHTML = '<p>아직 응답이 없습니다.</p>';
+                return;
+            }
+
+            // 중복 제거: 같은 사용자(이름+이메일)의 응답 중 가장 최근 것만 표시
+            const uniqueResponses = [];
+            const seenUsers = new Set();
+
+            // 최신 순으로 정렬하면서 원본 인덱스 보존
+            const responsesWithIndex = responses.map((response, index) => ({...response, originalIndex: index}));
+            const sortedResponses = responsesWithIndex.sort((a, b) => {
+                const timeA = new Date(a.completedTime || 0);
+                const timeB = new Date(b.completedTime || 0);
+                return timeB - timeA; // 내림차순 (최신순)
+            });
+
+            sortedResponses.forEach((response) => {
+                // 삭제된 응답은 제외
+                if (response.deleted) return;
+
+                // 사용자 식별자 (이름+이메일)
+                const userKey = `${response.name}|${response.email}`;
+
+                // 이미 처리된 사용자가 아닌 경우만 추가 (최신 응답만)
+                if (!seenUsers.has(userKey)) {
+                    seenUsers.add(userKey);
+                    uniqueResponses.push(response);
+                }
+            });
+
+            uniqueResponses.forEach((response) => {
+                const item = document.createElement('div');
+                item.className = 'response-item';
+                item.style.position = 'relative';
+                item.innerHTML = `
+                    <strong>${response.name}</strong><br>
+                    검사시간: ${new Date(response.completedTime).toLocaleString()}<br>
+                    결과: 유형 ${response.resultType}
+                    <button class="delete-btn" onclick="event.stopPropagation(); deleteResponse(${response.originalIndex});" style="position: absolute; top: 5px; right: 5px; background: #ff4444; color: white; border: none; border-radius: 3px; padding: 2px 8px; cursor: pointer; font-size: 12px;">삭제</button>
+                `;
+                item.onclick = () => showDetail(response.originalIndex);
+                list.appendChild(item);
+            });
+        }
+
+        // 상세 보기
+        function showDetail(index) {
+            currentDetailIndex = index;
+            const response = responses[index];
+
+            let html = `
+                <h2>${response.name}님의 상세 결과</h2>
+                <p><strong>검사시간:</strong> ${new Date(response.completedTime).toLocaleString()}</p>
+                <p><strong>최종 유형:</strong> ${response.resultType}</p>
+
+                <div class="chart-container" id="chartContainer">
+                    <h3>유형별 점수 분포</h3>
+            `;
+
+            // 색상 배열
+            const colors = [
+                '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+                '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE'
+            ];
+
+            for (let type = 1; type <= 9; type++) {
+                const score = response.typeScores[type];
+                const maxPossible = 45; // 9문항 × 5점
+                const percentage = (score / maxPossible) * 100;
+
+                html += `
+                    <div class="bar" style="background: ${colors[type-1]}; width: ${Math.max(percentage, 10)}%;">
+                        <div class="bar-label">유형 ${type}</div>
+                        <div class="bar-value">${score}점</div>
+                    </div>
+                `;
+            }
+
+            html += `
+                </div>
+
+                <h3>상세 응답 보기</h3>
+                <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
+            `;
+
+            // 원래 순서대로 정렬된 답변 표시
+            for (let i = 0; i < 81; i++) {
+                const originalQuestion = questions[i];
+
+                // 섞인 질문에서 해당 질문의 인덱스 찾기
+                const shuffledIndex = response.shuffledQuestions.findIndex(q => 
+                    q.type === originalQuestion.type && q.order === originalQuestion.order
+                );
+
+                const answer = response.answers[shuffledIndex] || 0;
+                const answerTexts = ['', '전혀 그렇지 않다', '그렇지 않다', '보통이다', '그렇다', '매우 그렇다'];
+
+                html += `
+                    <p><strong>Q${i+1} (유형${originalQuestion.type}):</strong> ${originalQuestion.question}</p>
+                    <p><strong>답변:</strong> ${answer}점 (${answerTexts[answer]})</p>
+                    <hr style="margin: 10px 0;">
+                `;
+            }
+
+            html += '</div>';
+
+            document.getElementById('detailContent').innerHTML = html;
+            showPage('detailPage');
+        }
+
+        // PDF 다운로드 기능 (점수분포 차트)
+        async function downloadChartAsPDF() {
+            const response = responses[currentDetailIndex];
+            if (!response) {
+                alert('응답 데이터가 없습니다.');
+                return;
+            }
+
+            try {
+                // jsPDF 인스턴스 생성
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF();
+
+                // PDF 제목 추가
+                pdf.setFontSize(18);
+                pdf.text(`${response.name}님의 성격 유형 검사 결과`, 20, 30);
+
+                // 검사 정보 추가
+                pdf.setFontSize(12);
+                pdf.text(`검사 시간: ${new Date(response.completedTime).toLocaleString()}`, 20, 45);
+                pdf.text(`최종 유형: 유형 ${response.resultType}`, 20, 55);
+
+                // 차트 영역을 캔버스로 변환
+                const chartContainer = document.getElementById('chartContainer');
+                const canvas = await html2canvas(chartContainer, {
+                    backgroundColor: '#ffffff',
+                    scale: 2
+                });
+
+                // 캔버스 이미지를 PDF에 추가
+                const imgData = canvas.toDataURL('image/png');
+                const imgWidth = 170;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                pdf.addImage(imgData, 'PNG', 20, 70, imgWidth, imgHeight);
+
+                // 유형별 점수 표 추가
+                let yPosition = 70 + imgHeight + 20;
+                pdf.setFontSize(14);
+                pdf.text('유형별 상세 점수', 20, yPosition);
+                yPosition += 10;
+
+                pdf.setFontSize(10);
+                const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+                              '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE'];
+
+                for (let type = 1; type <= 9; type++) {
+                    const score = response.typeScores[type];
+                    pdf.text(`유형 ${type}: ${score}점 (최대 45점)`, 20, yPosition);
+                    yPosition += 8;
+                }
+
+                // PDF 다운로드
+                pdf.save(`${response.name}_성격유형검사_점수분포.pdf`);
+
+            } catch (error) {
+                console.error('PDF 생성 오류:', error);
+                alert('PDF 생성 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 전체 응답 다운로드
+        function downloadAllResponses() {
+            // 삭제되지 않은 응답만 필터링
+            const activeResponses = responses.filter(response => !response.deleted);
+
+            if (activeResponses.length === 0) {
+                alert('다운로드할 응답이 없습니다.');
+                return;
+            }
+
+            let csvContent = "이름,이메일,전화번호,성별,나이,검사시간,최종유형";
+
+            // 81개 질문 헤더 추가
+            for (let i = 1; i <= 81; i++) {
+                csvContent += `,Q${i}`;
+            }
+
+            // 9개 유형 점수 헤더 추가
+            for (let i = 1; i <= 9; i++) {
+                csvContent += `,유형${i}점수`;
+            }
+
+            csvContent += "\n";
+
+            activeResponses.forEach(response => {
+                let row = `"${response.name}","${response.email}","${response.phone}","${response.gender}","${response.age}","${new Date(response.completedTime).toLocaleString()}","${response.resultType}"`;
+
+                // 원래 순서대로 답변 추가
+                for (let i = 0; i < 81; i++) {
+                    const originalQuestion = questions[i];
+                    const shuffledIndex = response.shuffledQuestions.findIndex(q => 
+                        q.type === originalQuestion.type && q.order === originalQuestion.order
+                    );
+                    const answer = response.answers[shuffledIndex] || 0;
+                    row += `,${answer}`;
+                }
+
+                // 유형별 점수 추가
+                for (let i = 1; i <= 9; i++) {
+                    row += `,${response.typeScores[i]}`;
+                }
+
+                csvContent += row + "\n";
+            });
+
+            downloadCSV(csvContent, '전체응답결과.csv');
+        }
+
+        // 개별 응답 다운로드
+        function downloadIndividualResponse() {
+            const response = responses[currentDetailIndex];
+
+            let csvContent = "항목,값\n";
+            csvContent += `"이름","${response.name}"\n`;
+            csvContent += `"이메일","${response.email}"\n`;
+            csvContent += `"전화번호","${response.phone}"\n`;
+            csvContent += `"성별","${response.gender}"\n`;
+            csvContent += `"나이","${response.age}"\n`;
+            csvContent += `"검사시간","${new Date(response.completedTime).toLocaleString()}"\n`;
+            csvContent += `"최종유형","${response.resultType}"\n\n`;
+
+            csvContent += "질문번호,유형,질문내용,답변점수\n";
+
+            for (let i = 0; i < 81; i++) {
+                const originalQuestion = questions[i];
+                const shuffledIndex = response.shuffledQuestions.findIndex(q => 
+                    q.type === originalQuestion.type && q.order === originalQuestion.order
+                );
+                const answer = response.answers[shuffledIndex] || 0;
+
+                csvContent += `"Q${i+1}","유형${originalQuestion.type}","${originalQuestion.question}","${answer}"\n`;
+            }
+
+            csvContent += "\n유형,점수\n";
+            for (let i = 1; i <= 9; i++) {
+                csvContent += `"유형${i}","${response.typeScores[i]}"\n`;
+            }
+
+            downloadCSV(csvContent, `${response.name}_개별결과.csv`);
+        }
+
+        // CSV 다운로드 헬퍼 함수
+        function downloadCSV(csvContent, filename) {
+            const BOM = "\uFEFF";
+            const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    
+</script>
+
+<div class="glasp-extension-toaster" style="display: block; width: 320px; margin: unset; padding: unset; border: unset; border-radius: unset; outline: unset; background-color: unset; box-shadow: unset; position: fixed; top: 40px; right: 24px; z-index: 9999;"><template shadowrootmode="open"><div class="glasp-extension" style="font-family: inherit;"></div></template></div><div class="glasp-extension" style="display: block; width: unset; margin: unset; padding: unset; border: unset; border-radius: unset; outline: unset; background-color: unset; box-shadow: unset; position: fixed; bottom: 16px; right: 16px; z-index: 9999;"><template shadowrootmode="open"><div class="glasp-extension" style="font-family: inherit;"></div></template></div></body></html>
