@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>9가지 성격, 9가지 와인 성격검사 - v1.5</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #fff;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            color: #777;
+        }
+
+        .page {
+            display: none;
+            padding: 40px 20px;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .main-content {
+            text-align: center;
+        }
+
+        .main-content img {
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 20px;
+        }
+
+        .main-content h2 {
+            font-size: 2em;
+            color: #4a4a4a;
+            margin-bottom: 10px;
+        }
+
+        .main-content p {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .btn-container {
+            margin-top: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            color: white;
+            background-color: #667eea;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn:hover {
+            background-color: #556be0;
+        }
+
+        .user-info-page .form-group {
+            margin-bottom: 20px;
+        }
+
+        .user-info-page label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .user-info-page input, .user-info-page select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+
+        .user-info-page input:focus, .user-info-page select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.5);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .checkbox-group input {
+            width: auto;
+            margin-right: 10px;
+        }
+
+        .survey-page {
+            padding-bottom: 80px;
+        }
+
+        .survey-page h2 {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            color: #4a4a4a;
+            text-align: center;
+        }
+
+        .question-card {
+            background: #f9f9f9;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .question-card p {
+            font-size: 1.2em;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: #667eea;
+            transition: width 0.3s ease;
+        }
+
+        .options {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .option-label {
+            display: block;
+            flex: 1 1 30%;
+            background-color: #e9eefc;
+            color: #667eea;
+            border: 2px solid #e9eefc;
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .option-label:hover {
+            background-color: #dbe4ff;
+        }
+
+        .option-label input[type="radio"] {
+            display: none;
+        }
+
+        .option-label input[type="radio"]:checked + span {
+            background-color: #667eea;
+            color: white;
+            border-color: #556be0;
+        }
+
+        .option-label input[type="radio"]:checked + span:hover {
+            background-color: #667eea;
+        }
+
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .neutral-warning {
+            color: #d9534f;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .result-page {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .result-page h2 {
+            font-size: 2em;
+            color: #4a4a4a;
+            margin-bottom: 10px;
+        }
+
+        .result-image {
+            max-width: 80%;
+            height: auto;
+            margin: 20px auto;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .result-description {
+            font-size: 1.1em;
+            color: #555;
+            line-height: 1.8;
+            text-align: center;
+            white-space: pre-wrap;
+            margin-bottom: 30px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="mainPage" class="page active">
+            <div class="header">
+                <h1>9가지 성격, 9가지 와인</h1>
+                <p>당신은 어떤 와인과 닮았나요?</p>
+            </div>
+            <div class="main-content">
+                <img src="https://page.gensparksite.com/v1/base64_upload/3909199320e8992e59d9f58c42a27d2c" alt="에니어그램 성격 유형">
+                <h2>나를 찾아서</h2>
+                <p>나의 에니어그램 성격 유형을 찾아보고, 나에게 맞는 와인을 알아봅시다.<br>총 81개 문항으로 이루어진 간이 성격검사입니다.</p>
+                <div class="btn-container">
+                    <button class="btn" onclick="showUserInfo()">검사 시작하기</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="userInfoPage" class="page">
+            <div class="header">
+                <h2>참여자 정보</h2>
+            </div>
+            <div class="main-content">
+                <form id="userForm">
+                    <div class="form-group">
+                        <label for="name">이름 *</label>
+                        <input type="text" id="name" name="이름" required="">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">이메일 *</label>
+                        <input type="email" id="email" name="이메일" required="">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">전화번호 *</label>
+                        <input type="tel" id="phone" name="전화번호" required="">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="gender">성별 *</label>
+                        <select id="gender" name="성별" required="">
+                            <option value="">선택해주세요</option>
+                            <option value="남성">남성</option>
+                            <option value="여성">여성</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="age">나이 *</label>
+                        <input type="number" id="age" name="나이" min="1" max="120" required="">
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="consent" name="개인정보동의" required="">
+                        <label for="consent">개인정보 제공에 동의합니다 *</label>
+                    </div>
+                </form>
+                <div class="btn-container">
+                    <button class="btn" onclick="startSurvey()">설문 시작</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="surveyPage" class="page">
+            <div class="header">
+                <p id="progressText">0 / 81</p>
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+            </div>
+            <div class="main-content">
+                <div class="question-card">
+                    <h2 id="questionNumber">질문 1</h2>
+                    <p id="questionText">질문 내용이 여기에 표시됩니다.</p>
+                </div>
+                
+                <div class="options">
+                    <label class="option-label">
+                        <input type="radio" name="answer" value="5" onclick="selectAnswer(5)">
+                        <span>5점 (매우 그렇다)</span>
+                    </label>
+                    <label class="option-label">
+                        <input type="radio" name="answer" value="4" onclick="selectAnswer(4)">
+                        <span>4점 (그렇다)</span>
+                    </label>
+                    <label class="option-label">
+                        <input type="radio" name="answer" value="3" onclick="selectAnswer(3)" id="neutralOption">
+                        <span>3점 (보통이다 / 그저 그렇다)</span>
+                    </label>
+                    <label class="option-label">
+                        <input type="radio" name="answer" value="2" onclick="selectAnswer(2)">
+                        <span>2점 (아니다)</span>
+                    </label>
+                    <label class="option-label">
+                        <input type="radio" name="answer" value="1" onclick="selectAnswer(1)">
+                        <span>1점 (매우 아니다)</span>
+                    </label>
+                </div>
+                
+                <div class="neutral-warning" id="neutralWarning" style="display: none;">
+                    * '보통' 선택지는 10회까지만 가능합니다. 남은 횟수: <span id="neutralCount">10</span>
+                </div>
+                
+                <div class="navigation-buttons">
+                    <button class="btn" id="prevButton" onclick="previousQuestion()">이전</button>
+                    <button class="btn" id="nextButton" onclick="nextQuestion()">다음</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="resultPage" class="page">
+            <div class="header">
+                <h2>당신의 성격 유형은?</h2>
+                <h2 id="resultType">유형 1</h2>
+            </div>
+            <div class="main-content">
+                <img id="resultImage" class="result-image" alt="결과 이미지">
+                <p id="resultDescription" class="result-description">결과 설명이 여기에 표시됩니다.</p>
+                <div class="btn-container">
+                    <button class="btn" onclick="showMain()">다시 검사하기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 이 코드는 설문 데이터를 Google Sheets로 전송하고 결과를 화면에 표시하는 역할만 수행합니다.
+        
+        // 전역 변수
+        let questions = [{"type": 1, "order": 1, "question": "나는 도덕적 기준이나 원칙을 중요하게 생각한다."}, {"type": 1, "order": 2, "question": "일을 하다가 실수를 하면 자책감이 오래 남는다."}, {"type": 1, "order": 3, "question": "내 머릿속에는 심판관이 있어서 나는 그와 함께 살고 있는 것 같다."}, {"type": 1, "order": 4, "question": "사람들에게 비난을 받기보다 내 양심에 어긋나는 게 더 싫다."}, {"type": 1, "order": 5, "question": "화를 내지 안으려고 노력하지만 한 번 화가 나면 오래가는 편이다. "}, {"type": 1, "order": 6, "question": "나는 자세한 부분까지 오류를 감지하려고 하고, 그것이 내 실수가 아닐 때라도 수정하고 싶은 유혹을 느낀다"}, {"type": 1, "order": 7, "question": "주변에 있는 불완전함을 발견하고 그것을 어떻게 개선할 수 있는지 생각하는 경향이 있다."}, {"type": 1, "order": 8, "question": "내면 깊숙이 “이건 옳지 않아”라는 판단이 자주 일어난다."}, {"type": 1, "order": 9, "question": "나는 내 역할과 책임을 다하는 것이 중요하다고 믿는다."}, {"type": 2, "order": 10, "question": "나는 누군가를 도와줄 수 있을 때 기쁨을 느낀다."}, {"type": 2, "order": 11, "question": "나는 다른 사람의 감정을 잘 파악하고, 그들의 기분을 맞춰주려고 노력한다."}, {"type": 2, "order": 12, "question": "나는 종종 자신의 필요를 돌보기보다 다른 사람의 필요를 먼저 챙긴다."}, {"type": 2, "order": 13, "question": "내가 도움을 줄 수 없을 때 죄책감을 느끼기도 한다."}, {"type": 2, "order": 14, "question": "누군가 나를 필요로 하지 않으면 불안해진다."}, {"type": 2, "order": 15, "question": "사람들 사이에서 따뜻하고 사랑받는 존재로 보이고 싶다."}, {"type": 2, "order": 16, "question": "나는 거절당하는 것에 대한 두려움 때문에 '아니오'라고 말하기 어려워한다."}, {"type": 2, "order": 17, "question": "자신을 사람들을 돌보는 사람 또는 일종의 주최자와 같은 존재로 여긴다."}, {"type": 2, "order": 18, "question": "나는 사랑을 받기 위해 나 자신을 희생할 때가 있다."}, {"type": 3, "order": 19, "question": "나는 항상 목표를 설정하고 성취하려고 노력한다."}, {"type": 3, "order": 20, "question": "다른 사람의 인정이나 칭찬이 나에게 큰 의미가 있다."}, {"type": 3, "order": 21, "question": "남들로부터 설득력이 있다는 말을 듣는다."}, {"type": 3, "order": 22, "question": "사람들을 만날 때에는 많은 성과를 올리고 있는 사람이라는 이미지를 심어주는 것이 중요하다."}, {"type": 3, "order": 23, "question": "감정보다 결과와 성과에 집중하는 편이다."}, {"type": 3, "order": 24, "question": "첫인상은 아주 중요하고 나는 상황에 맞게 내 이미지를 조절할 줄 안다."}, {"type": 3, "order": 25, "question": "항상 목표를 명확히 설정하고 성과를 거두기 위해 당장 해야 할 일이 무엇인지 잘 알고 있다."}, {"type": 3, "order": 26, "question": "시간을 낭비하는 것이 견디기 힘들다."}, {"type": 3, "order": 27, "question": "성과를 내지 못했을 때 스스로를 몰아붙인다."}, {"type": 4, "order": 28, "question": "나는 나만의 감정과 정체성을 매우 중요하게 여긴다."}, {"type": 4, "order": 29, "question": "상징적인 것(시, 비유, 예술 등)에 마음이 끌린다."}, {"type": 4, "order": 30, "question": "평범하거나 모방적인 삶에 깊
